@@ -38,10 +38,14 @@ public class EncBot extends HardwareHelper {
     public final DcMotorEx[] encoders = new DcMotorEx[3]; //right, left, X
     IMU imuC;
 
+    //stores previous ticks inside updateOdometry() to add to rolling sum of location
     public int[] prevTicks = new int[3];
-
+    /**
+     * Stores the odometry for all three encoders. Currently we only need objects 0-1 since 2 was to calculte heading.
+     * pose[1] stores x position and pose[0] stores y position
+     */
     public double[] pose = new double[3];
-//0 is y and 1 is x
+
     public void init(HardwareMap hwMap){
         imuC = hwMap.get(IMU.class, "imu");
         //instantiating the previously null objects
@@ -75,15 +79,27 @@ public class EncBot extends HardwareHelper {
         for (int i=0; i<4; i++) motors[i].setPower(p[i]);
     }
 
-    public void resetOdometry(double x, double y, double headingRadians){
+    /**
+     *
+     * @param x x cooridinate to restart robot
+     * @param y y coordinate to restart robot
+     * @param headingDeg heading in degrees to restart robot
+     */
+    public void resetOdometry(double x, double y, double headingDeg){
         pose[0] = x;
         pose[1] = y;
-        pose[2] = headingRadians;
+        pose[2] = Math.toRadians(headingDeg);
         for (int i=0; i<3; i++) prevTicks[i] = encoders[i].getCurrentPosition();
     }
 
     public double angleDEG(){return -imuC.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);}
     public double angleRAD(){return -imuC.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);}
+
+    /**
+     * This method updates the odometry. It keeps a running calculation of the x and y position
+     * by checking the change of distance from last iteration
+     * @return returns a double array. 0=y, 1=x, 2="no need"
+     */
     public double[] updateOdometry(){
         int[] ticks = new int[3];
         for (int i=0; i<3; i++) ticks[i] = encoders[i].getCurrentPosition();
@@ -104,24 +120,37 @@ public class EncBot extends HardwareHelper {
         pose[2] = AngleUtils.normalizeRadians(pose[2] + headingChangeRadians);
         return pose;
     }
+    /**
+     * This is driving method that goes to x,y, and theta with tuned PID.
+     * Input a movement object that has that data and the method goes there.
+     * To drive there it uses mecanum driving code tht takes in x, y, and turning input. To drive there,
+     * there is PID for each position which then scales speed and where to go.
+     * Lastly, movement has an abstract method called runExtra() which is ran in the method--use to run other stuff.
+     * @param movement abstract object that has x,y, theta, and PID values that are used
+     */
     public void drive(Movement movement){
         movement.getCoefficients().resetForPID();
-        PIDCoefficients pidCoefficients = new PIDCoefficients(2,0,0,0);
-        while(thetaCondition(movement) || xCondition(movement)){
+        PIDCoefficients turnPID = new PIDCoefficients(3,0,0,0);
+        while(thetaCondition(movement) || xCondition(movement) ||  yCondition(movement)){
             pose = updateOdometry();
             double dX = movement.getdX(), dY = movement.getdY(), dTheta = movement.getdTheta();
 
-            xPID = movement.getCoefficients().getPID(dX - pose[1], dX, Config.speed);
-            yPID = movement.getCoefficients().getPID(dY - pose[0], dY, Config.speed);
-            rxPID = pidCoefficients.getPID(pidCoefficients, bMath.subtractAnglesDeg(dTheta, angleDEG()), dTheta, 0.3);
+            xPID = movement.getCoefficients().getPID(dX - pose[1], Math.abs(dX), Config.speed);
+            yPID = movement.getCoefficients().getPID(dY - pose[0], Math.abs(dY), Config.speed);
+            rxPID = turnPID.getPID(turnPID, bMath.subtractAnglesDeg(dTheta, angleDEG()), dTheta, 0.3);
 
             movement.runExtra();
             drive(xPID, yPID, rxPID);
         }
     }
-    public double subHead(Movement movement){return bMath.subtractAnglesDeg(movement.getdTheta(), angleDEG());}
-    public double subX(Movement movement){return movement.getdX() - pose[1];}
-    public void drive(double x, double y, double rx){
+    /**
+     * Driving code to go to position. It is essentially mecanum driving but uses PID to drive there.
+     * All inputs are scaled to be between -1 and 1 since power goes to motors
+     * @param x x input
+     * @param y y input
+     * @param rx turn input
+     */
+    private void drive(double x, double y, double rx){
         double rotX = x * Math.cos(angleRAD()) - y * Math.sin(angleRAD());
         double rotY = x * Math.sin(angleRAD()) + y * Math.cos(angleRAD());
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
@@ -135,11 +164,34 @@ public class EncBot extends HardwareHelper {
         motors[2].setPower(frontRightPower);
         motors[3].setPower(backRightPower);
     }
-    boolean xCondition(Movement movement){return Math.abs(movement.getdX() - pose[1]) > 1;}
-    boolean yCondition(Movement movement){return Math.abs(movement.getdY() - pose[0]) > 1;}
+
+    /**
+     * X position condition for loop
+     * @param movement object to access desired X
+     * @return true or false if robot has reached its dX
+     */
+    boolean xCondition(Movement movement){return Math.abs(movement.getdX() - pose[1]) > 0.25;}
+    /**
+     * Y position condition for loop
+     * @param movement object to access desired Y
+     * @return true or false if robot has reached its dY
+     */
+    boolean yCondition(Movement movement){return Math.abs(movement.getdY() - pose[0]) > 0.25;}
+    /**
+     * Theta position condition for loop. Uses subtractingAnglesDeg to calculate error
+     * @param movement object to access desired theta
+     * @return true or false if robot has reached its dTheta
+     */
     boolean thetaCondition(Movement movement){return Math.abs(bMath.subtractAnglesDeg(movement.getdTheta(), angleDEG())) > 1;}
 
-    public double getxPID(){return xPID;}
+
+    public double subHead(Movement movement){return bMath.subtractAnglesDeg(movement.getdTheta(), angleDEG());}
+    public double subX(Movement movement){return movement.getdX() - pose[1];}
+    public double subY(Movement movement){return movement.getdY() - pose[0];}
+
+    public double getxPID(){
+        return xPID;
+    }
 
     public double getyPID() {
         return yPID;

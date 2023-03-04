@@ -15,46 +15,32 @@ public class TestOdom extends LinearOpMode {
 
     EncBot bot = new EncBot();
     double[] pose;
-    Movement drive = new Movement(30,10,90, Config.drive) {
+    Movement drive = new Movement(20,20,60, Config.drive) {
         @Override
-        public void runExtra() {
-            telemetry.addData("sub heading:", bot.subHead(drive));
-            telemetry.addData("xpid:", bot.getxPID());
-            telemetry.addData("xpid:", bot.getyPID());
-            telemetry.addData("rxpid:", bot.getRxPID());
-            telemetry.addData("POSE", "y = %.1f  x = %.1f  h = %.1f", bot.getPose()[0], bot.getPose()[1],
-                   bot.angleDEG());
-            telemetry.update();
-        }
+        public void runExtra() {telemetry();}
     };
-    Movement drive2 = new Movement(30,10,45, Config.drive) {
+    Movement drive2 = new Movement(2,16,20, Config.drive) {
         @Override
-        public void runExtra() {
-            telemetry.addLine("IN DRIVE 2");
-            telemetry.addData("xpid:", bot.getxPID());
-            telemetry.addData("xpid:", bot.getyPID());
-            telemetry.addData("rxpid:", bot.getRxPID());
-            telemetry.addData("sub heading:", bot.subHead(drive2));
-            telemetry.addData("sub x:", bot.subX(drive2));
-            telemetry.addData("POSE", "y = %.1f  x = %.1f  h = %.1f", bot.getPose()[0], bot.getPose()[1],
-                    bot.angleDEG());
-            telemetry.update();
-        }
+        public void runExtra() {telemetry();}
     };
-    Movement drive3 = new Movement(30,30,90, Config.drive) {
+    Movement drive3 = new Movement(50,50,35, Config.drive) {
         @Override
-        public void runExtra() {
-            telemetry.addLine("IN DRIVE 2");
-            telemetry.addData("xpid:", bot.getxPID());
-            telemetry.addData("xpid:", bot.getyPID());
-            telemetry.addData("rxpid:", bot.getRxPID());
-            telemetry.addData("sub heading:", bot.subHead(drive2));
-            telemetry.addData("sub x:", bot.subX(drive2));
-            telemetry.addData("POSE", "y = %.1f  x = %.1f  h = %.1f", bot.getPose()[0], bot.getPose()[1],
-                    bot.angleDEG());
-            telemetry.update();
-        }
+        public void runExtra() {telemetry();}
     };
+    Movement drive4 = new Movement(-30,-30,45, Config.drive) {
+        @Override
+        public void runExtra() {telemetry();}
+    };
+    public void telemetry(){
+        telemetry.addData("xpid:", bot.getxPID());
+        telemetry.addData("xpid:", bot.getyPID());
+        telemetry.addData("rxpid:", bot.getRxPID());
+        telemetry.addData("sub heading:", bot.subHead(drive4));
+        telemetry.addData("sub x:", bot.subX(drive4));
+        telemetry.addData("POSE", "y = %.1f  x = %.1f  h = %.1f", bot.getPose()[0], bot.getPose()[1],
+                bot.angleDEG());
+        telemetry.update();
+    }
     public void runOpMode(){
         bot.init(hardwareMap);
         bot.resetOdometry(0, 0, 0);
@@ -70,9 +56,9 @@ public class TestOdom extends LinearOpMode {
                 bot.drive(drive);
                 bot.drive(drive2);
                 bot.drive(drive3);
+                bot.drive(drive4);
             }
             count++;
-            if (count == 1){}
             pose = bot.updateOdometry();
             telemetry.addData("time", this.time);
             telemetry.addData("POSE", "y = %.1f  x = %.1f  h = %.1f", pose[0], pose[1],
