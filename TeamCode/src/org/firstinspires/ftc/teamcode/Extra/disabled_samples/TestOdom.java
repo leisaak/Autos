@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Features.Config;
+import org.firstinspires.ftc.teamcode.NewSelfDriving.Function;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.Movement;
 
 /**
@@ -14,29 +15,32 @@ import org.firstinspires.ftc.teamcode.NewSelfDriving.Movement;
 public class TestOdom extends LinearOpMode {
 
     EncBot bot = new EncBot();
+    Function xSquared = new Function(x -> Math.pow(x,2));
+    Function xCubed = new Function(x -> Math.pow((1/3) * x,3));
+    Function yCubedInv = new Function(x -> 3 * Math.pow(x, -3));
     double[] pose;
-    Movement drive = new Movement(20,20,60, Config.drive) {
+    Movement drive = new Movement(10,30,0, Config.drive) {
         @Override
-        public void runExtra() {telemetry();}
+        public void runExtra() {telemetry(drive);}
     };
-    Movement drive2 = new Movement(2,16,20, Config.drive) {
+    Movement drive2 = new Movement(10,27,90, Config.drive) {
         @Override
-        public void runExtra() {telemetry();}
+        public void runExtra() {telemetry(drive2);}
     };
     Movement drive3 = new Movement(50,50,35, Config.drive) {
         @Override
-        public void runExtra() {telemetry();}
+        public void runExtra() {telemetry(drive3);}
     };
     Movement drive4 = new Movement(-30,-30,45, Config.drive) {
         @Override
-        public void runExtra() {telemetry();}
+        public void runExtra() {telemetry(drive4);}
     };
-    public void telemetry(){
+    public void telemetry(Movement movement){
         telemetry.addData("xpid:", bot.getxPID());
-        telemetry.addData("xpid:", bot.getyPID());
+        telemetry.addData("ypid:", bot.getyPID());
         telemetry.addData("rxpid:", bot.getRxPID());
-        telemetry.addData("sub heading:", bot.subHead(drive4));
-        telemetry.addData("sub x:", bot.subX(drive4));
+        telemetry.addData("sub heading:", bot.subHead(movement));
+        telemetry.addData("sub x:", bot.subX(movement));
         telemetry.addData("POSE", "y = %.1f  x = %.1f  h = %.1f", bot.getPose()[0], bot.getPose()[1],
                 bot.angleDEG());
         telemetry.update();

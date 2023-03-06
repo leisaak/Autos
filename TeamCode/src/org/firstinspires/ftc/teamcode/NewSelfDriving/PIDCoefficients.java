@@ -83,5 +83,11 @@ public class PIDCoefficients {
     public double getkD(){return kD;}
     public double getkF(){return kF;}
 
+    //setters
+    public void setP(double P){this.P = P;}
+    public void setI(double I){this.I = I;}
+    public void setD(double D){this.D = D;}
+    public void setF(double F){this.F = F;}
+
     public static class ConfigPIDCoefficients{}
 }

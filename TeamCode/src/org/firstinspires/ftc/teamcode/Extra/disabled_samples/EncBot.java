@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.AbstractInit.HardwareHelper;
@@ -13,9 +14,13 @@ import org.firstinspires.ftc.teamcode.AbstractInit.Init;
 import org.firstinspires.ftc.teamcode.Bot;
 import org.firstinspires.ftc.teamcode.Features.Config;
 import org.firstinspires.ftc.teamcode.Helpers.bMath;
+import org.firstinspires.ftc.teamcode.NewSelfDriving.Function;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.Movement;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.PIDCoefficients;
 import org.firstinspires.ftc.teamcode.OpModes.OpScript;
+
+import java.util.concurrent.TimeUnit;
+import java.util.function.DoubleUnaryOperator;
 
 import virtual_robot.util.AngleUtils;
 
@@ -129,15 +134,43 @@ public class EncBot extends HardwareHelper {
      * @param movement abstract object that has x,y, theta, and PID values that are used
      */
     public void drive(Movement movement){
+        movement.getCoefficients().resetForPID();//resetting value to begin loop
+        while(thetaCondition(movement) || xCondition(movement) ||  yCondition(movement)){
+            pose = updateOdometry();//updating odometers
+            double dX = movement.getdX(), dY = movement.getdY(), dTheta = movement.getdTheta();
+
+            //updating PID values for x, y and theta
+            xPID = movement.getCoefficients().getPID(dX - pose[1], Math.abs(dX), Config.speed);
+            yPID = movement.getCoefficients().getPID(dY - pose[0], Math.abs(dY), Config.speed);
+            rxPID = Config.turn.getPID(Config.turn, bMath.subtractAnglesDeg(dTheta, angleDEG()), dTheta, 0.4);
+
+            movement.runExtra();//run extra if needed
+            drive(xPID, yPID, rxPID);//drive there
+        }
+    }
+
+    /**
+     * AutoDrive method that takes in a movement object and function object. Supposed to follow path
+     * which the function input designates
+     * @param movement abstract object that has x,y, theta, and PID values that are used
+     * @param function lamba expression to input how the robot should drive
+     */
+    public void drive(Movement movement, Function function){
+        Function fx = function.derivative();//function in terms of x
+        Function fy = function.derivative().changeVariable();//function in terms of y
+        //creating new x and y PID objects
+        PIDCoefficients xpid = new PIDCoefficients(1,0,0,0);
+        PIDCoefficients ypid = new PIDCoefficients(1,0,0,0);
         movement.getCoefficients().resetForPID();
-        PIDCoefficients turnPID = new PIDCoefficients(3,0,0,0);
         while(thetaCondition(movement) || xCondition(movement) ||  yCondition(movement)){
             pose = updateOdometry();
             double dX = movement.getdX(), dY = movement.getdY(), dTheta = movement.getdTheta();
+            xpid.setP( movement.getCoefficients().getP() * fx.evaluate(pose[1]));//scaling P value based on x
+            ypid.setP( movement.getCoefficients().getP() * fy.evaluate(pose[0]));//scaling P value based on y
 
-            xPID = movement.getCoefficients().getPID(dX - pose[1], Math.abs(dX), Config.speed);
-            yPID = movement.getCoefficients().getPID(dY - pose[0], Math.abs(dY), Config.speed);
-            rxPID = turnPID.getPID(turnPID, bMath.subtractAnglesDeg(dTheta, angleDEG()), dTheta, 0.3);
+            xPID = xpid.getPID(dX - pose[1], Math.abs(dX), Config.speed);
+            yPID = ypid.getPID(dX - pose[1], Math.abs(dY), Config.speed);
+            rxPID = Config.turn.getPID(Config.turn, bMath.subtractAnglesDeg(dTheta, angleDEG()), dTheta, 0.3);
 
             movement.runExtra();
             drive(xPID, yPID, rxPID);

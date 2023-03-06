@@ -64,9 +64,6 @@ public class Config {
 
     //Self driving stuff
     public static PIDCoefficients drive = new PIDCoefficients(2,0,0, 0);
-    public static PIDCoefficients driveX = new PIDCoefficients(1,0,0,0);
-    public static PIDCoefficients driveY = new PIDCoefficients(2,0,0,0);
-    public static PIDCoefficients driveTheta = new PIDCoefficients(3,0,0,0);
     public static PIDCoefficients turn = new PIDCoefficients(2.5,0,0,0);
     public static Movement driveAndMoveArm = new Movement(50,50,10, drive) {
         @Override
