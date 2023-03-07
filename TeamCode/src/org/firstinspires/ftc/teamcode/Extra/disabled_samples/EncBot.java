@@ -17,8 +17,10 @@ import org.firstinspires.ftc.teamcode.Helpers.bMath;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.Function;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.Movement;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.PIDCoefficients;
+import org.firstinspires.ftc.teamcode.NewSelfDriving.PathBuilder;
 import org.firstinspires.ftc.teamcode.OpModes.OpScript;
 
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.DoubleUnaryOperator;
 
@@ -148,7 +150,39 @@ public class EncBot extends HardwareHelper {
             drive(xPID, yPID, rxPID);//drive there
         }
     }
+    /**
+     *
+     * @param totalMovement desired x,y, and theta for the entire movement
+     * @param pointMovement desired x,y, and theta for movement from point to point
+     */
+    public void drivePoint(Movement totalMovement, Movement pointMovement){
+        while(xCondition(pointMovement) ||  yCondition(pointMovement)){
+            pose = updateOdometry();//updating odometers
+            double dX = totalMovement.getdX(), dY = totalMovement.getdY(), dTheta = totalMovement.getdTheta();
+            double xPointError = pointMovement.getdX() - pose[1], yPointError = pointMovement.getdY() - pose[0];
+            double xTotalError = totalMovement.getdX() - pose[1], yTotalError = totalMovement.getdY() - pose[0];
 
+            //updating PID values for x, y and theta
+            xPID = totalMovement.getCoefficients().getPID(Math.copySign(xTotalError, xPointError), Math.abs(dX), Config.speed);
+            yPID = totalMovement.getCoefficients().getPID(Math.copySign(yTotalError, yPointError), Math.abs(dY), Config.speed);
+            rxPID = Config.turn.getPID(Config.turn, bMath.subtractAnglesDeg(dTheta, angleDEG()), dTheta, 0.4);
+
+            totalMovement.runExtra();//run extra if needed
+            drive(xPID, yPID, rxPID);//drive there
+        }
+    }
+    /**
+     * Autonomous driving method where you input a path to drive
+     * @param path path with all the points of how you want the robot to turn
+     */
+    public void drive(PathBuilder path){
+            for (int i = 0; i < path.getPath().size(); i++) {
+                Movement currentPath = path.getPath().get(i);
+                Movement totalPath = path.getPath().get(path.getPath().size()-1);
+
+                drivePoint(totalPath, currentPath);
+        }
+    }
     /**
      * AutoDrive method that takes in a movement object and function object. Supposed to follow path
      * which the function input designates
@@ -222,20 +256,13 @@ public class EncBot extends HardwareHelper {
     public double subX(Movement movement){return movement.getdX() - pose[1];}
     public double subY(Movement movement){return movement.getdY() - pose[0];}
 
-    public double getxPID(){
-        return xPID;
-    }
+    public double getxPID(){return xPID;}
 
-    public double getyPID() {
-        return yPID;
-    }
+    public double getyPID() {return yPID;}
 
-    public double getRxPID() {
-        return rxPID;
-    }
+    public double getRxPID() {return rxPID;}
 
-    public double[] getPose(){
-        return pose;
+    public double[] getPose(){return pose;
     }
     public void setPose(double[] newPose){pose = newPose;}
 }

@@ -4,8 +4,10 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Features.Config;
+import org.firstinspires.ftc.teamcode.NewSelfDriving.CreatePoints;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.Function;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.Movement;
+import org.firstinspires.ftc.teamcode.NewSelfDriving.PathBuilder;
 
 /**
  * TeleOp op mode to test odometry with three "dead-wheel" encoders. This op mode will work with
@@ -15,9 +17,18 @@ import org.firstinspires.ftc.teamcode.NewSelfDriving.Movement;
 public class TestOdom extends LinearOpMode {
 
     EncBot bot = new EncBot();
-    Function xSquared = new Function(x -> Math.pow(x,2));
-    Function xCubed = new Function(x -> Math.pow((1/3) * x,3));
+    Function Squared = new Function(x -> (x * x));
+    Function oneHalf = new Function(x -> x);
+    Function xCubed = new Function(x -> Math.pow((1 / 3) * x, 3));
     Function yCubedInv = new Function(x -> 3 * Math.pow(x, -3));
+    PathBuilder.Extra arm = () -> {
+        telemetry.addData("xpid:", bot.getxPID());
+        telemetry.addData("ypid:", bot.getyPID());
+        telemetry.addData("rxpid:", bot.getRxPID());
+        telemetry.addData("POSE", "y = %.1f  x = %.1f  h = %.1f", bot.getPose()[0], bot.getPose()[1],
+                bot.angleDEG());
+        telemetry.update();
+    };
     double[] pose;
     Movement drive = new Movement(10,30,0, Config.drive) {
         @Override
@@ -46,6 +57,11 @@ public class TestOdom extends LinearOpMode {
         telemetry.update();
     }
     public void runOpMode(){
+        CreatePoints.addY(oneHalf, 2,0,25);
+        CreatePoints.addX(oneHalf, 2,0,7);
+        System.out.println(CreatePoints.getX());
+        System.out.println(CreatePoints.getY());
+        PathBuilder path1 = new PathBuilder(PathBuilder.createPath(CreatePoints.getX(),CreatePoints.getY(),90, Config.drive, arm));
         bot.init(hardwareMap);
         bot.resetOdometry(0, 0, 0);
 
@@ -57,10 +73,11 @@ public class TestOdom extends LinearOpMode {
         int count = 0;
         while (opModeIsActive()){
             if(count<1){
-                bot.drive(drive);
-                bot.drive(drive2);
-                bot.drive(drive3);
-                bot.drive(drive4);
+                bot.drive(path1);
+//                bot.drive(drive);
+//                bot.drive(drive2);
+//                bot.drive(drive3);
+//                bot.drive(drive4);
             }
             count++;
             pose = bot.updateOdometry();
