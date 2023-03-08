@@ -18,7 +18,9 @@ public class TestOdom extends LinearOpMode {
 
     EncBot bot = new EncBot();
     Function Squared = new Function(x -> (x * x));
-    Function oneHalf = new Function(x -> x);
+    Function NegOneHalf = new Function(x -> -(x*x) + 6);
+    Function X = new Function(x -> x);
+    Function NegX = new Function(x -> -x);
     Function xCubed = new Function(x -> Math.pow((1 / 3) * x, 3));
     Function yCubedInv = new Function(x -> 3 * Math.pow(x, -3));
     PathBuilder.Extra arm = () -> {
@@ -30,7 +32,7 @@ public class TestOdom extends LinearOpMode {
         telemetry.update();
     };
     double[] pose;
-    Movement drive = new Movement(10,30,0, Config.drive) {
+    Movement drive = new Movement(40,-55,90, Config.drive) {
         @Override
         public void runExtra() {telemetry(drive);}
     };
@@ -57,11 +59,13 @@ public class TestOdom extends LinearOpMode {
         telemetry.update();
     }
     public void runOpMode(){
-        CreatePoints.addY(oneHalf, 2,0,25);
-        CreatePoints.addX(oneHalf, 2,0,7);
+        CreatePoints.addX(X, 3,0,40);
+        CreatePoints.addY(new Function(x -> -10* Math.log(x)), 3,0,256);
+//        CreatePoints.addY(new Function(x -> 7-x), 10,0,9);
+//        CreatePoints.addX(new Function(x -> (x*x) - 25), 10,0,6);
         System.out.println(CreatePoints.getX());
         System.out.println(CreatePoints.getY());
-        PathBuilder path1 = new PathBuilder(PathBuilder.createPath(CreatePoints.getX(),CreatePoints.getY(),90, Config.drive, arm));
+        PathBuilder path1 = new PathBuilder(PathBuilder.createPath(CreatePoints.getX(),CreatePoints.getY(),90, Config.drive2, arm));
         bot.init(hardwareMap);
         bot.resetOdometry(0, 0, 0);
 

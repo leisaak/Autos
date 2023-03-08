@@ -151,7 +151,8 @@ public class EncBot extends HardwareHelper {
         }
     }
     /**
-     *
+     * Autonomous method that drives to a single point. The main difference from this and drive is that it has
+     * No theta condition so that it can keep on moving
      * @param totalMovement desired x,y, and theta for the entire movement
      * @param pointMovement desired x,y, and theta for movement from point to point
      */
@@ -163,8 +164,8 @@ public class EncBot extends HardwareHelper {
             double xTotalError = totalMovement.getdX() - pose[1], yTotalError = totalMovement.getdY() - pose[0];
 
             //updating PID values for x, y and theta
-            xPID = totalMovement.getCoefficients().getPID(Math.copySign(xTotalError, xPointError), Math.abs(dX), Config.speed);
-            yPID = totalMovement.getCoefficients().getPID(Math.copySign(yTotalError, yPointError), Math.abs(dY), Config.speed);
+            xPID = totalMovement.getCoefficients().getPID(xPointError, Math.abs(dX), Config.speed);
+            yPID = totalMovement.getCoefficients().getPID(xPointError, Math.abs(dY), Config.speed);
             rxPID = Config.turn.getPID(Config.turn, bMath.subtractAnglesDeg(dTheta, angleDEG()), dTheta, 0.4);
 
             totalMovement.runExtra();//run extra if needed
@@ -179,7 +180,6 @@ public class EncBot extends HardwareHelper {
             for (int i = 0; i < path.getPath().size(); i++) {
                 Movement currentPath = path.getPath().get(i);
                 Movement totalPath = path.getPath().get(path.getPath().size()-1);
-
                 drivePoint(totalPath, currentPath);
         }
     }
