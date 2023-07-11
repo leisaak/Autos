@@ -27,24 +27,25 @@ public class TestOdom extends LinearOpMode {
         telemetry.addData("xpid:", bot.getxPID());
         telemetry.addData("ypid:", bot.getyPID());
         telemetry.addData("rxpid:", bot.getRxPID());
+        telemetry.addData("Angle", bot.getAngle());
         telemetry.addData("POSE", "y = %.1f  x = %.1f  h = %.1f", bot.getPose()[0], bot.getPose()[1],
                 bot.angleDEG());
         telemetry.update();
     };
     double[] pose;
-    Movement drive = new Movement(40,-55,90, Config.drive) {
+    Movement drive = new Movement(0,0,90, Config.drive) {
         @Override
         public void runExtra() {telemetry(drive);}
     };
-    Movement drive2 = new Movement(10,27,90, Config.drive) {
+    Movement drive2 = new Movement(50,30,-45, Config.drive) {
         @Override
         public void runExtra() {telemetry(drive2);}
     };
-    Movement drive3 = new Movement(50,50,35, Config.drive) {
+    Movement drive3 = new Movement(-40,-27,45, Config.drive) {
         @Override
         public void runExtra() {telemetry(drive3);}
     };
-    Movement drive4 = new Movement(-30,-30,45, Config.drive) {
+    Movement drive4 = new Movement(-30,30,-45, Config.drive) {
         @Override
         public void runExtra() {telemetry(drive4);}
     };
@@ -59,13 +60,14 @@ public class TestOdom extends LinearOpMode {
         telemetry.update();
     }
     public void runOpMode(){
-        CreatePoints.addX(X, 3,0,40);
-        CreatePoints.addY(new Function(x -> -10* Math.log(x)), 3,0,256);
-//        CreatePoints.addY(new Function(x -> 7-x), 10,0,9);
-//        CreatePoints.addX(new Function(x -> (x*x) - 25), 10,0,6);
+        CreatePoints.addX(X, 50,0,6);
+        CreatePoints.addY(new Function(x -> Math.pow(x,2)), 50,0,6);
+        bot.setRadius(10);
         System.out.println(CreatePoints.getX());
         System.out.println(CreatePoints.getY());
         PathBuilder path1 = new PathBuilder(PathBuilder.createPath(CreatePoints.getX(),CreatePoints.getY(),90, Config.drive2, arm));
+        System.out.println(Function.curveDistance(path1));
+        System.out.println(bot.getAngle());
         bot.init(hardwareMap);
         bot.resetOdometry(0, 0, 0);
 
@@ -75,13 +77,14 @@ public class TestOdom extends LinearOpMode {
         }
 
         int count = 0;
+
         while (opModeIsActive()){
             if(count<1){
-                bot.drive(path1);
-//                bot.drive(drive);
-//                bot.drive(drive2);
-//                bot.drive(drive3);
-//                bot.drive(drive4);
+//                bot.purePursuit(path1, Config.drive);
+                bot.drive(drive);
+                bot.drive(drive2);
+                bot.drive(drive3);
+                bot.drive(drive4);
             }
             count++;
             pose = bot.updateOdometry();

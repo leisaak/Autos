@@ -20,6 +20,18 @@ public class CreatePoints {
         }
     }
 
+    public static void addCirclePoints(double centerX, double centerY, double radius){
+        Function.CircleFunction circle = new Function.CircleFunction(centerX, centerY, radius);
+        Function xEquation = new Function(circle.getXEquation());
+        Function yEquation = new Function(circle.getYEquation());
+        for (double t = 0; t < 2 * Math.PI; t += 0.1) {
+            double x = xEquation.evaluate(t);
+            double y = yEquation.evaluate(t);
+            CreatePoints.x.add(x);
+            CreatePoints.y.add(y);
+        }
+    }
+
     public static LinkedList<Double> getX() {
         return x;
     }

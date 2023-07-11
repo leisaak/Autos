@@ -8,6 +8,7 @@ public class PathBuilder {
     public PathBuilder(LinkedList<Movement> path){
         this.path = path;
     }
+
     public static LinkedList<Movement> createPath(LinkedList<Double> xPoints, LinkedList<Double> yPoints, double dTheta, PIDCoefficients pid, Extra extra){
         LinkedList<Movement> path = new LinkedList<>();
         //size out any extra points

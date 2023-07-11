@@ -1,28 +1,24 @@
 package org.firstinspires.ftc.teamcode.Extra.disabled_samples;
 
+import androidx.annotation.NonNull;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.AbstractInit.HardwareHelper;
 import org.firstinspires.ftc.teamcode.AbstractInit.Init;
-import org.firstinspires.ftc.teamcode.Bot;
 import org.firstinspires.ftc.teamcode.Features.Config;
 import org.firstinspires.ftc.teamcode.Helpers.bMath;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.Function;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.Movement;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.PIDCoefficients;
 import org.firstinspires.ftc.teamcode.NewSelfDriving.PathBuilder;
-import org.firstinspires.ftc.teamcode.OpModes.OpScript;
 
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-import java.util.function.DoubleUnaryOperator;
 
 import virtual_robot.util.AngleUtils;
 
@@ -147,7 +143,7 @@ public class EncBot extends HardwareHelper {
             rxPID = Config.turn.getPID(Config.turn, bMath.subtractAnglesDeg(dTheta, angleDEG()), dTheta, 0.4);
 
             movement.runExtra();//run extra if needed
-            drive(xPID, yPID, rxPID);//drive there
+            drive(xPID, yPID, Math.copySign(rxPID, subHead(movement)));//drive there
         }
     }
     /**
@@ -251,7 +247,6 @@ public class EncBot extends HardwareHelper {
      */
     boolean thetaCondition(Movement movement){return Math.abs(bMath.subtractAnglesDeg(movement.getdTheta(), angleDEG())) > 1;}
 
-
     public double subHead(Movement movement){return bMath.subtractAnglesDeg(movement.getdTheta(), angleDEG());}
     public double subX(Movement movement){return movement.getdX() - pose[1];}
     public double subY(Movement movement){return movement.getdY() - pose[0];}
@@ -265,4 +260,57 @@ public class EncBot extends HardwareHelper {
     public double[] getPose(){return pose;
     }
     public void setPose(double[] newPose){pose = newPose;}
+
+    //Pure Pursuit
+    double radiusCM = 1.0;
+    double angle = 0d;
+
+    public void purePursuit(PathBuilder path, PIDCoefficients pid){
+        Movement zeroPoint = path.getPath().get(1);//zero point for other stuff
+        angle = Math.tan(zeroPoint.getdY()/zeroPoint.getdX());
+        double dTheta = zeroPoint.getdTheta();//desired theta
+
+        while(purePursuitCondition(path)) {
+            pose = updateOdometry();//updating odometers
+
+            double currentErrorDistance = Function.curveDistance(path) - Function.hypotenuse(pose[1], pose[0]);//calculating total distance from end
+
+            //updating PID values for x, y and theta
+            xPID = pid.getPID(currentErrorDistance * Math.cos(angle), Math.abs(currentErrorDistance), Config.speed);
+            yPID = pid.getPID(currentErrorDistance * Math.sin(angle), Math.abs(currentErrorDistance), Config.speed);
+            rxPID = Config.turn.getPID(Config.turn, bMath.subtractAnglesDeg(dTheta, angleDEG()), dTheta, 0.4);
+
+            zeroPoint.runExtra();//run extra if needed
+            drive(xPID, yPID, Math.copySign(rxPID, subHead(zeroPoint)));//drive there
+        }
+    }
+
+    public double getCurrentError(PathBuilder path){return Function.curveDistance(path);}
+
+    private boolean purePursuitCondition(PathBuilder path){
+        inRadius(path);
+        return Function.curveDistance(path) - Function.hypotenuse(pose[1], pose[0]) > 1;
+    }
+
+    public double getAngle(){
+        return angle;
+    }
+
+    boolean in = true;
+    private void inRadius(@NonNull PathBuilder path){
+        double xPos = pose[1];
+        double yPos = pose[0];
+        for(int i = 1; i < path.getPath().size(); i++){
+            double x = path.getPath().get(i).getdX();
+            double y = path.getPath().get(i).getdY();
+            boolean xInRadius = x > xPos - radiusCM && x < xPos + radiusCM;
+            boolean yInRadius = y > yPos - radiusCM && y < yPos + radiusCM;
+            if(xInRadius && yInRadius){
+                continue;
+            } else{
+                angle = Math.toDegrees(Math.tan(path.getPath().get(i-1).getdY()/path.getPath().get(i-1).getdX()));
+            }
+        }
+    }
+    public void setRadius(double radius){radiusCM = radius;}
 }

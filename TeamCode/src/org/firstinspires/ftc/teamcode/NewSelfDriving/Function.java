@@ -6,14 +6,12 @@ import java.util.function.DoubleUnaryOperator;
 
 public class Function{
     private DoubleUnaryOperator function;
-
     /**
      * Constructor to set function. Use a lamba expression:
      * x -> f(x)
      * @param function function that you want. See above on how to create function
      */
     public Function(DoubleUnaryOperator function) {this.function = function;}
-
     /**
      * Evaluates a given value
      * @param x x value
@@ -69,6 +67,42 @@ public class Function{
     //getter
     Function getFunction(){return new Function(function);}
 
+    public static double curveDistance(PathBuilder path){
+        double sum = 0d;
+        for(int i = 1; i < path.getPath().size(); i++){
+            Movement p1 = path.getPath().get(i), p2 = path.getPath().get(i-1);
+            //two coordinate points
+            double xC = CreatePoints.getX().get(i), xP = CreatePoints.getX().get(i-1);
+            double yC = CreatePoints.getY().get(i), yP = CreatePoints.getY().get(i-1);
+
+            //calculating hypotenuse of points
+            sum += Math.sqrt(Math.pow(xC - xP, 2) + Math.pow(yC - yP, 2));
+        }
+        return sum;
+    }
+
+    public static double hypotenuse(double a, double b){
+        return Math.sqrt(Math.pow(a,2) + Math.pow(b,2));
+    }
+
     //setter
     public void setFunction(DoubleUnaryOperator function) {this.function = function;}
+
+    public static class CircleFunction{
+        private final double centerX, centerY,radius;
+
+        public CircleFunction(double centerX, double centerY, double radius) {
+            this.centerX = centerX;
+            this.centerY = centerY;
+            this.radius = radius;
+        }
+
+        public DoubleUnaryOperator getXEquation() {
+            return x -> centerX + radius * Math.cos(x);
+        }
+
+        public DoubleUnaryOperator getYEquation() {
+            return y -> centerY + radius * Math.sin(y);
+        }
+    }
 }
