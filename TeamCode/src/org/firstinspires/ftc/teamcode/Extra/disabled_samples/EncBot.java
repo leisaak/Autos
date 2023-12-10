@@ -118,8 +118,8 @@ public class EncBot extends HardwareHelper {
         double avgHeadingRadians = pose[2] + headingChangeRadians / 2.0;
         double cos = Math.cos(angleRAD());
         double sin = Math.sin(angleRAD());
-        pose[0] += -dxR*sin + dyR*cos;
-        pose[1] += dxR*cos + dyR*sin;
+        pose[0] += -dxR*sin + dyR*cos;//y
+        pose[1] += dxR*cos + dyR*sin;//x
         pose[2] = AngleUtils.normalizeRadians(pose[2] + headingChangeRadians);
         return pose;
     }
@@ -213,7 +213,7 @@ public class EncBot extends HardwareHelper {
      * @param y y input
      * @param rx turn input
      */
-    private void drive(double x, double y, double rx){
+    public void drive(double x, double y, double rx){
         double rotX = x * Math.cos(angleRAD()) - y * Math.sin(angleRAD());
         double rotY = x * Math.sin(angleRAD()) + y * Math.cos(angleRAD());
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);

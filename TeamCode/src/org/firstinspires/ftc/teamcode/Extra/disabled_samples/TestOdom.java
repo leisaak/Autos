@@ -33,11 +33,11 @@ public class TestOdom extends LinearOpMode {
         telemetry.update();
     };
     double[] pose;
-    Movement drive = new Movement(0,0,90, Config.drive) {
+    Movement drive = new Movement(0,50,0, Config.drive) {
         @Override
         public void runExtra() {telemetry(drive);}
     };
-    Movement drive2 = new Movement(50,30,-45, Config.drive) {
+    Movement drive2 = new Movement(-50,50,-90, Config.drive) {
         @Override
         public void runExtra() {telemetry(drive2);}
     };
@@ -93,6 +93,7 @@ public class TestOdom extends LinearOpMode {
                     Math.toDegrees(pose[2]));
             telemetry.addData("Controller", "x = %.1f  y = %.1f  h = %.1f", gamepad1.left_stick_x, gamepad1.left_stick_y,
                     gamepad1.right_stick_x);
+            telemetry.addData("DEGREES:", bot.angleDEG());
             telemetry.addData("Back Left", "T = %d  V = %.0f", bot.motors[0].getCurrentPosition(), bot.motors[0].getVelocity());
             telemetry.addData("Front Left", "T = %d  V = %.0f", bot.motors[1].getCurrentPosition(), bot.motors[1].getVelocity());
             telemetry.addData("Front Right", "T = %d  V = %.0f", bot.motors[2].getCurrentPosition(), bot.motors[2].getVelocity());
@@ -104,7 +105,7 @@ public class TestOdom extends LinearOpMode {
             double px = gamepad1.left_stick_x;
             double py = -gamepad1.left_stick_y;
             double pa = gamepad1.right_stick_x;
-            bot.setDrivePower(px, py, pa);
+            bot.drive(px, py, pa);
         }
     }
 }
